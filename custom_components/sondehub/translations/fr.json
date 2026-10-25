@@ -11,34 +11,82 @@
           "flight_radius_km": "Rayon d'alerte en vol",
           "landing_radius_km": "Rayon d'alerte d'atterrissage",
           "watch_radius_km": "Rayon de surveillance (prédictions)",
-          "scan_interval": "Intervalle de mise à jour"
+          "scan_interval": "Intervalle de mise à jour",
+          "prediction_interval": "Intervalle des prédictions d'atterrissage"
+        },
+        "data_description": {
+          "flight_radius_km": "Une sonde qui vole dans ce rayon active Sonde à proximité et déclenche sondehub_sonde_nearby (une fois par sonde).",
+          "landing_radius_km": "Un atterrissage prévu dans ce rayon active Atterrissage à proximité et déclenche sondehub_landing_nearby (une fois par sonde).",
+          "watch_radius_km": "Les sondes dans ce rayon sont suivies et reçoivent une prédiction d'atterrissage.",
+          "scan_interval": "Secondes entre deux requêtes de position (/sondes). Défaut 300 s = 12 requêtes par heure.",
+          "prediction_interval": "Secondes entre deux requêtes de prédiction (/predictions, une seule requête pour toutes les sondes). Envoyées uniquement s'il y a des sondes dans le rayon de surveillance."
         }
       }
     },
-    "error": { "cannot_connect": "Impossible de joindre l'API SondeHub." },
-    "abort": { "already_configured": "Ce lieu est déjà configuré." }
+    "error": {
+      "cannot_connect": "Impossible de joindre l'API SondeHub."
+    },
+    "abort": {
+      "already_configured": "Ce lieu est déjà configuré."
+    }
   },
   "options": {
     "step": {
       "init": {
+        "title": "Radiosondes SondeHub",
+        "description": "SondeHub est un service communautaire gratuit qui demande de ne pas interroger son API trop souvent. Chaque mise à jour coûte une requête, plus une pour les prédictions d'atterrissage quand elles sont dues. Tu peux aussi désactiver l'interrogation automatique (menu de l'intégration → Options système) et utiliser le bouton Vérifier maintenant.",
         "data": {
           "flight_radius_km": "Rayon d'alerte en vol",
           "landing_radius_km": "Rayon d'alerte d'atterrissage",
           "watch_radius_km": "Rayon de surveillance (prédictions)",
-          "scan_interval": "Intervalle de mise à jour"
+          "scan_interval": "Intervalle de mise à jour",
+          "prediction_interval": "Intervalle des prédictions d'atterrissage"
+        },
+        "data_description": {
+          "flight_radius_km": "Une sonde qui vole dans ce rayon active Sonde à proximité et déclenche sondehub_sonde_nearby (une fois par sonde).",
+          "landing_radius_km": "Un atterrissage prévu dans ce rayon active Atterrissage à proximité et déclenche sondehub_landing_nearby (une fois par sonde).",
+          "watch_radius_km": "Les sondes dans ce rayon sont suivies et reçoivent une prédiction d'atterrissage.",
+          "scan_interval": "Secondes entre deux requêtes de position (/sondes). Défaut 300 s = 12 requêtes par heure.",
+          "prediction_interval": "Secondes entre deux requêtes de prédiction (/predictions, une seule requête pour toutes les sondes). Envoyées uniquement s'il y a des sondes dans le rayon de surveillance."
         }
       }
     }
   },
   "entity": {
-    "sensor": {
-      "nearest_sonde_distance": { "name": "Distance de la sonde la plus proche" },
-      "nearest_landing_distance": { "name": "Distance du prochain atterrissage prévu" },
-      "sondes_in_range": { "name": "Sondes dans le rayon de vol" }
-    },
     "binary_sensor": {
-      "sonde_nearby": { "name": "Sonde à proximité" },
-      "landing_nearby": { "name": "Atterrissage à proximité" }
+      "sonde_nearby": {
+        "name": "Sonde à proximité"
+      },
+      "landing_nearby": {
+        "name": "Atterrissage à proximité"
+      }
+    },
+    "button": {
+      "check_now": {
+        "name": "Vérifier maintenant"
+      }
+    },
+    "number": {
+      "update_interval": {
+        "name": "Intervalle de mise à jour"
+      },
+      "prediction_interval": {
+        "name": "Intervalle des prédictions d'atterrissage"
+      }
+    },
+    "sensor": {
+      "nearest_sonde_distance": {
+        "name": "Distance de la sonde la plus proche"
+      },
+      "nearest_landing_distance": {
+        "name": "Distance du prochain atterrissage prévu"
+      },
+      "sondes_in_range": {
+        "name": "Sondes dans le rayon de vol"
+      },
+      "last_check": {
+        "name": "Dernière vérification"
+      }
     }
   }
 }

@@ -51,3 +51,11 @@ class SondeHubEntity(CoordinatorEntity[SondeHubCoordinator]):
             manufacturer="SondeHub",
             entry_type=DeviceEntryType.SERVICE,
         )
+
+
+class SondeHubControlEntity(SondeHubEntity):
+    """Controls stay usable while the API is failing, e.g. to retry or slow down."""
+
+    @property
+    def available(self) -> bool:
+        return True

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from datetime import timedelta
@@ -10,19 +9,24 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import SondeHubClient, SondeHubError, parse_telemetry
 from .const import (
+    CHECK_NOW_COOLDOWN,
     CONF_FLIGHT_RADIUS,
     CONF_LANDING_RADIUS,
+    CONF_PREDICTION_INTERVAL,
     CONF_SCAN_INTERVAL,
     CONF_WATCH_RADIUS,
     DEFAULT_FLIGHT_RADIUS,
     DEFAULT_LANDING_RADIUS,
+    DEFAULT_PREDICTION_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_WATCH_RADIUS,
     DESCENT_THRESHOLD,
@@ -31,13 +35,20 @@ from .const import (
     EVENT_SONDE_NEARBY,
     LAST_SECONDS,
     NOTIFIED_TTL,
-    PREDICTION_TTL,
 )
 from .util import bearing_deg, haversine_km
 
 _LOGGER = logging.getLogger(__name__)
 
+# Options that can change without reloading the config entry.
+LIVE_OPTIONS = (CONF_SCAN_INTERVAL, CONF_PREDICTION_INTERVAL)
+
 type SondeHubConfigEntry = ConfigEntry[SondeHubCoordinator]
+
+
+def entry_config(entry: ConfigEntry) -> dict[str, Any]:
+    """Entry data overlaid with its options."""
+    return {**entry.data, **entry.options}
 
 
 class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -46,7 +57,7 @@ class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     config_entry: SondeHubConfigEntry
 
     def __init__(self, hass: HomeAssistant, entry: SondeHubConfigEntry) -> None:
-        cfg = {**entry.data, **entry.options}
+        cfg = entry_config(entry)
         self.lat: float = float(cfg[CONF_LATITUDE])
         self.lon: float = float(cfg[CONF_LONGITUDE])
         self.flight_radius = float(cfg.get(CONF_FLIGHT_RADIUS, DEFAULT_FLIGHT_RADIUS))
@@ -55,16 +66,28 @@ class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             float(cfg.get(CONF_WATCH_RADIUS, DEFAULT_WATCH_RADIUS)),
             self.flight_radius,
         )
-        interval = int(cfg.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        self.prediction_interval = int(
+            cfg.get(CONF_PREDICTION_INTERVAL, DEFAULT_PREDICTION_INTERVAL)
+        )
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             config_entry=entry,
-            update_interval=timedelta(seconds=interval),
+            update_interval=timedelta(
+                seconds=int(cfg.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+            ),
+            # "Check now" runs immediately; presses during the cooldown are
+            # merged into a single extra request at the end of it.
+            request_refresh_debouncer=Debouncer(
+                hass, _LOGGER, cooldown=CHECK_NOW_COOLDOWN, immediate=True
+            ),
         )
         self.client = SondeHubClient(async_get_clientsession(hass))
-        self._landing_cache: dict[str, tuple[float, dict[str, Any] | None]] = {}
+        self._landing_cache: dict[str, dict[str, Any] | None] = {}
+        self._landings_fetched_at = 0.0
+        self._force_landings = False
+        self._reload_snapshot = self._non_live_options(entry)
         self._store: Store[dict[str, dict[str, float]]] = Store(
             hass, 1, f"{DOMAIN}_{entry.entry_id}"
         )
@@ -80,19 +103,64 @@ class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             }
 
     # ------------------------------------------------------------------ #
+    # Request frequency
 
-    async def _landing_for(self, serial: str) -> dict[str, Any] | None:
+    @property
+    def scan_interval(self) -> int:
+        return int(self.update_interval.total_seconds())
+
+    @staticmethod
+    def _non_live_options(entry: ConfigEntry) -> dict[str, Any]:
+        return {k: v for k, v in entry_config(entry).items() if k not in LIVE_OPTIONS}
+
+    @callback
+    def async_apply_options(self) -> bool:
+        """Apply changed intervals in place. Returns False if a reload is needed."""
+        entry = self.config_entry
+        if self._non_live_options(entry) != self._reload_snapshot:
+            return False
+        cfg = entry_config(entry)
+        self.prediction_interval = int(
+            cfg.get(CONF_PREDICTION_INTERVAL, DEFAULT_PREDICTION_INTERVAL)
+        )
+        scan = int(cfg.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        if scan != self.scan_interval:
+            self.update_interval = timedelta(seconds=scan)
+            # Re-arm the pending timer so the new interval counts from now
+            # instead of after the (possibly much longer) old one.
+            if self._unsub_refresh:
+                self._schedule_refresh()
+        self.async_update_listeners()
+        return True
+
+    async def async_check_now(self) -> None:
+        """Refresh positions and landing predictions right away."""
+        self._force_landings = True
+        await self.async_request_refresh()
+
+    # ------------------------------------------------------------------ #
+
+    async def _async_landings(self, serials: list[str]) -> dict[str, dict[str, Any] | None]:
+        """Landing predictions, refreshed in one batched request when due."""
+        if not serials:
+            self._force_landings = False
+            return {}
         now = time.monotonic()
-        cached = self._landing_cache.get(serial)
-        if cached and now - cached[0] < PREDICTION_TTL:
-            return cached[1]
-        try:
-            landing = await self.client.async_get_landing(serial)
-        except SondeHubError as err:
-            _LOGGER.debug("No prediction for %s: %s", serial, err)
-            return cached[1] if cached else None
-        self._landing_cache[serial] = (now, landing)
-        return landing
+        due = (
+            self._force_landings
+            or now - self._landings_fetched_at >= self.prediction_interval
+            or any(s not in self._landing_cache for s in serials)
+        )
+        if due:
+            try:
+                fetched = await self.client.async_get_landings(serials)
+            except SondeHubError as err:
+                _LOGGER.debug("Landing predictions unavailable: %s", err)
+            else:
+                self._landing_cache = fetched
+                self._landings_fetched_at = now
+                self._force_landings = False
+        return {s: self._landing_cache.get(s) for s in serials}
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
@@ -118,9 +186,9 @@ class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             sondes[info["serial"]] = info
 
-        # Landing predictions (one small request per candidate sonde, cached).
-        landings = await asyncio.gather(*(self._landing_for(s) for s in sondes))
-        for info, landing in zip(sondes.values(), landings, strict=True):
+        landings = await self._async_landings(list(sondes))
+        for serial, info in sondes.items():
+            landing = landings[serial]
             if landing:
                 landing = dict(landing)
                 landing["distance_km"] = round(
@@ -135,10 +203,6 @@ class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     )
                 )
             info["landing"] = landing
-
-        for serial in list(self._landing_cache):
-            if serial not in sondes:
-                del self._landing_cache[serial]
 
         in_flight = sorted(
             (s for s, i in sondes.items() if i["distance_km"] <= self.flight_radius),
@@ -166,6 +230,7 @@ class SondeHubCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "nearest_landing": nearest_landing,
             "in_flight_radius": in_flight,
             "in_landing_radius": in_landing,
+            "checked_at": dt_util.utcnow(),
         }
 
     # ------------------------------------------------------------------ #

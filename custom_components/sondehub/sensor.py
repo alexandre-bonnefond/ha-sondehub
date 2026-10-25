@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -9,7 +10,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfLength
+from homeassistant.const import EntityCategory, UnitOfLength
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -26,6 +27,7 @@ async def async_setup_entry(
             NearestSondeDistance(c),
             NearestLandingDistance(c),
             SondesInRange(c),
+            LastCheck(c),
         ]
     )
 
@@ -83,3 +85,17 @@ class SondesInRange(SondeHubEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"serials": self.coordinator.data["in_flight_radius"]}
+
+
+class LastCheck(SondeHubEntity, SensorEntity):
+    """When SondeHub was last polled successfully."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: SondeHubCoordinator) -> None:
+        super().__init__(coordinator, "last_check")
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self.coordinator.data.get("checked_at")

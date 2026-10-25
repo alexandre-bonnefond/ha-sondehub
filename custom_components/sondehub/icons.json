@@ -1,0 +1,36 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "sonde_nearby": {
+        "default": "mdi:radar"
+      },
+      "landing_nearby": {
+        "default": "mdi:parachute"
+      }
+    },
+    "button": {
+      "check_now": {
+        "default": "mdi:refresh"
+      }
+    },
+    "number": {
+      "update_interval": {
+        "default": "mdi:timer-cog-outline"
+      },
+      "prediction_interval": {
+        "default": "mdi:timer-sand"
+      }
+    },
+    "sensor": {
+      "nearest_sonde_distance": {
+        "default": "mdi:map-marker-distance"
+      },
+      "nearest_landing_distance": {
+        "default": "mdi:parachute-outline"
+      },
+      "sondes_in_range": {
+        "default": "mdi:weather-windy"
+      }
+    }
+  }
+}

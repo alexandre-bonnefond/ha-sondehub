@@ -56,7 +56,7 @@ actions:
         {% if trigger.id == 'landing' %}
           {{ d.type or 'Sonde' }} {{ d.serial }} — {{ d.landing_distance_km }} km,
           cap {{ d.landing_bearing }}°{% if d.frequency %}, {{ d.frequency }} MHz{% endif %}.
-          {% if d.landing_time and not d.landed %}Heure estimée : {{ d.landing_time }}.{% endif %}
+          {% if d.landing_time and not d.landed %}Heure estimée : {{ as_timestamp(d.landing_time) | timestamp_custom('%H:%M') }}.{% endif %}
           {{ d.maps_url }}
         {% else %}
           {{ d.type or 'Sonde' }} {{ d.serial }} à {{ d.distance_km }} km (cap {{ d.bearing }}°),

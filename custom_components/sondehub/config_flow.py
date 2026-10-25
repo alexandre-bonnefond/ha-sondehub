@@ -19,13 +19,18 @@ from .api import SondeHubClient, SondeHubError
 from .const import (
     CONF_FLIGHT_RADIUS,
     CONF_LANDING_RADIUS,
+    CONF_PREDICTION_INTERVAL,
     CONF_SCAN_INTERVAL,
     CONF_WATCH_RADIUS,
     DEFAULT_FLIGHT_RADIUS,
     DEFAULT_LANDING_RADIUS,
+    DEFAULT_PREDICTION_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_WATCH_RADIUS,
     DOMAIN,
+    INTERVAL_STEP,
+    MAX_INTERVAL,
+    MIN_INTERVAL,
 )
 
 
@@ -41,7 +46,7 @@ def _km(min_: int, max_: int, step: int = 5) -> NumberSelector:
 def _interval() -> NumberSelector:
     return NumberSelector(
         NumberSelectorConfig(
-            min=60, max=600, step=10,
+            min=MIN_INTERVAL, max=MAX_INTERVAL, step=INTERVAL_STEP,
             unit_of_measurement="s", mode=NumberSelectorMode.BOX,
         )
     )
@@ -53,6 +58,7 @@ def _tuning_schema(get) -> dict:
         vol.Required(CONF_LANDING_RADIUS, default=get(CONF_LANDING_RADIUS, DEFAULT_LANDING_RADIUS)): _km(1, 500),
         vol.Required(CONF_WATCH_RADIUS, default=get(CONF_WATCH_RADIUS, DEFAULT_WATCH_RADIUS)): _km(50, 1000, 10),
         vol.Required(CONF_SCAN_INTERVAL, default=get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)): _interval(),
+        vol.Required(CONF_PREDICTION_INTERVAL, default=get(CONF_PREDICTION_INTERVAL, DEFAULT_PREDICTION_INTERVAL)): _interval(),
     }
 
 

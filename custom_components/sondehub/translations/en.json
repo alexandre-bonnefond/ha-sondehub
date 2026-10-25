@@ -11,34 +11,82 @@
           "flight_radius_km": "Flight alert radius",
           "landing_radius_km": "Landing alert radius",
           "watch_radius_km": "Watch radius (fetch predictions)",
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "prediction_interval": "Landing prediction interval"
+        },
+        "data_description": {
+          "flight_radius_km": "A sonde flying within this distance turns on Sonde nearby and fires sondehub_sonde_nearby (once per sonde).",
+          "landing_radius_km": "A landing predicted within this distance turns on Landing nearby and fires sondehub_landing_nearby (once per sonde).",
+          "watch_radius_km": "Sondes within this distance are tracked and get a landing prediction.",
+          "scan_interval": "Seconds between two position requests (/sondes). Default 300 s = 12 requests per hour.",
+          "prediction_interval": "Seconds between two landing prediction requests (/predictions, one request for all sondes). Only sent while sondes are in the watch radius."
         }
       }
     },
-    "error": { "cannot_connect": "Cannot reach the SondeHub API." },
-    "abort": { "already_configured": "This location is already configured." }
+    "error": {
+      "cannot_connect": "Cannot reach the SondeHub API."
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
   },
   "options": {
     "step": {
       "init": {
+        "title": "SondeHub radiosondes",
+        "description": "SondeHub is a free community service that asks clients not to poll its API often. Every update costs one request, plus one for landing predictions when they are due. You can also turn off automatic polling (integration menu → System options) and use the Check now button instead.",
         "data": {
           "flight_radius_km": "Flight alert radius",
           "landing_radius_km": "Landing alert radius",
           "watch_radius_km": "Watch radius (fetch predictions)",
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "prediction_interval": "Landing prediction interval"
+        },
+        "data_description": {
+          "flight_radius_km": "A sonde flying within this distance turns on Sonde nearby and fires sondehub_sonde_nearby (once per sonde).",
+          "landing_radius_km": "A landing predicted within this distance turns on Landing nearby and fires sondehub_landing_nearby (once per sonde).",
+          "watch_radius_km": "Sondes within this distance are tracked and get a landing prediction.",
+          "scan_interval": "Seconds between two position requests (/sondes). Default 300 s = 12 requests per hour.",
+          "prediction_interval": "Seconds between two landing prediction requests (/predictions, one request for all sondes). Only sent while sondes are in the watch radius."
         }
       }
     }
   },
   "entity": {
-    "sensor": {
-      "nearest_sonde_distance": { "name": "Nearest sonde distance" },
-      "nearest_landing_distance": { "name": "Nearest predicted landing distance" },
-      "sondes_in_range": { "name": "Sondes in flight radius" }
-    },
     "binary_sensor": {
-      "sonde_nearby": { "name": "Sonde nearby" },
-      "landing_nearby": { "name": "Landing nearby" }
+      "sonde_nearby": {
+        "name": "Sonde nearby"
+      },
+      "landing_nearby": {
+        "name": "Landing nearby"
+      }
+    },
+    "button": {
+      "check_now": {
+        "name": "Check now"
+      }
+    },
+    "number": {
+      "update_interval": {
+        "name": "Update interval"
+      },
+      "prediction_interval": {
+        "name": "Landing prediction interval"
+      }
+    },
+    "sensor": {
+      "nearest_sonde_distance": {
+        "name": "Nearest sonde distance"
+      },
+      "nearest_landing_distance": {
+        "name": "Nearest predicted landing distance"
+      },
+      "sondes_in_range": {
+        "name": "Sondes in flight radius"
+      },
+      "last_check": {
+        "name": "Last check"
+      }
     }
   }
 }
