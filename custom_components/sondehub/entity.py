@@ -11,12 +11,17 @@ from .const import DOMAIN
 from .coordinator import SondeHubCoordinator
 
 
-def sonde_attrs(info: dict[str, Any] | None) -> dict[str, Any]:
-    """Attributes describing one sonde (and its landing, if known)."""
+def sonde_attrs(info: dict[str, Any] | None, at_landing: bool = False) -> dict[str, Any]:
+    """Attributes describing one sonde (and its landing, if known).
+
+    Maps place an entity at its latitude/longitude attributes. With
+    ``at_landing`` they point at the predicted landing spot instead of the
+    sonde, whose position stays available as sonde_latitude/sonde_longitude.
+    """
     if not info:
         return {}
     landing = info.get("landing") or {}
-    return {
+    attrs = {
         "serial": info["serial"],
         "sonde_type": info["type"],
         "frequency_mhz": info["frequency"],
@@ -35,6 +40,12 @@ def sonde_attrs(info: dict[str, Any] | None) -> dict[str, Any]:
         "landing_time": landing.get("time"),
         "landed": landing.get("landed"),
     }
+    if at_landing and landing:
+        attrs["sonde_latitude"] = attrs["latitude"]
+        attrs["sonde_longitude"] = attrs["longitude"]
+        attrs["latitude"] = landing["latitude"]
+        attrs["longitude"] = landing["longitude"]
+    return attrs
 
 
 class SondeHubEntity(CoordinatorEntity[SondeHubCoordinator]):

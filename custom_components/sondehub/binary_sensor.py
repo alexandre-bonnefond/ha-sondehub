@@ -40,5 +40,10 @@ class RadiusBinarySensor(SondeHubEntity, BinarySensorEntity):
         serials = self.coordinator.data[self._data_key]
         attrs: dict[str, Any] = {"serials": serials}
         if serials:
-            attrs.update(sonde_attrs(self.coordinator.data["sondes"][serials[0]]))
+            attrs.update(
+                sonde_attrs(
+                    self.coordinator.data["sondes"][serials[0]],
+                    at_landing=self._data_key == "in_landing_radius",
+                )
+            )
         return attrs

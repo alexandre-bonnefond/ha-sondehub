@@ -23,7 +23,7 @@
     },
     "sensor": {
       "nearest_sonde_distance": {
-        "default": "mdi:map-marker-distance"
+        "default": "mdi:airballoon"
       },
       "nearest_landing_distance": {
         "default": "mdi:parachute-outline"

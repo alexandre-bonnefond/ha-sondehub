@@ -93,10 +93,18 @@ a sonde enters your flight radius or is predicted to land nearby.
 
 ### Dashboard (optional)
 
-[`examples/dashboard.yaml`](examples/dashboard.yaml) is the view shown in the
-screenshot above (status tiles, details, polling controls and a map). In a
-dashboard: ✏️ Edit → ⋮ → **Raw configuration editor**, and paste it as an item
-under `views:`.
+[`examples/dashboard.yaml`](examples/dashboard.yaml) is the dashboard shown in
+the screenshot above: status tiles, details, polling controls, and a map with
+the nearest sonde (balloon) and the nearest predicted landing (parachute).
+
+1. Settings → Dashboards → **+ Add dashboard** → **New dashboard from
+   scratch** → title `Radiosondes` → **Create**. It appears in the sidebar.
+2. Open it → ✏️ (top right) → ⋮ → **Raw configuration editor**.
+3. Replace everything with the content of `examples/dashboard.yaml` → **Save**
+   → **Done**.
+
+The file assumes the default entity ids (`sensor.sondehub_…`). If you named
+the integration entry differently, adjust the `sondehub_` prefix.
 
 ## Request frequency
 
@@ -167,6 +175,15 @@ attributes: `serial`, `sonde_type`, `frequency_mhz`, `latitude`, `longitude`,
 `altitude_m`, `vertical_speed_ms`, `descending`, `distance_km`, `bearing`,
 `last_frame`, `landing_latitude`, `landing_longitude`, `landing_distance_km`,
 `landing_bearing`, `landing_time`, `landed`.
+
+Because they have `latitude`/`longitude`, these entities also show up on
+maps, including the sidebar **Map**, which labels them with the initials of
+their name: `SNs` = *SondeHub Nearest sonde distance*, `SNp` = *SondeHub
+Nearest predicted landing distance*, `SSn` / `SLn` = *Sonde nearby* /
+*Landing nearby* (only while on). The sonde entities sit at the sonde's last
+position. The landing entities (`…_nearest_predicted_landing_distance`,
+`…_landing_nearby`) sit at the **predicted landing spot**, and carry the
+sonde's own position as `sonde_latitude` / `sonde_longitude`.
 
 ## Events
 

@@ -69,7 +69,7 @@ class NearestLandingDistance(SondeHubEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         s = self.coordinator.data["nearest_landing"]
-        return sonde_attrs(self.coordinator.data["sondes"].get(s)) if s else {}
+        return sonde_attrs(self.coordinator.data["sondes"].get(s), at_landing=True) if s else {}
 
 
 class SondesInRange(SondeHubEntity, SensorEntity):
