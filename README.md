@@ -6,7 +6,7 @@ the public [SondeHub](https://sondehub.org) API and tells you when:
 - a sonde is **flying** within a given radius of your home;
 - a sonde is **predicted to land** (or has landed) near your home.
 
-Data © SondeHub, licensed CC BY-SA 2.0.
+Code under the [MIT license](LICENSE). Data © SondeHub, licensed CC BY-SA 2.0.
 
 ![Example dashboard](docs/images/dashboard.png)
 
