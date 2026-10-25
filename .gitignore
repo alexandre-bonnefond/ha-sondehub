@@ -8,5 +8,3 @@ venv/
 .vscode/
 .idea/
 .DS_Store
-# local HA config used for testing
-.ha-test/

@@ -1,0 +1,52 @@
+# Example dashboard view for the SondeHub integration.
+# Dashboard → ✏️ Edit → ⋮ → Raw configuration editor, then paste this as an
+# item under `views:` (adjust the entity ids if you named the integration
+# something other than "SondeHub").
+title: Radiosondes
+path: radiosondes
+icon: mdi:weather-windy
+cards:
+  - type: tile
+    entity: binary_sensor.sondehub_sonde_nearby
+    name: Sonde in flight radius
+  - type: tile
+    entity: binary_sensor.sondehub_landing_nearby
+    name: Landing predicted nearby
+  - type: entities
+    title: SondeHub
+    entities:
+      - entity: sensor.sondehub_nearest_sonde_distance
+        name: Nearest sonde
+      - type: attribute
+        entity: sensor.sondehub_nearest_sonde_distance
+        attribute: serial
+        name: Serial
+        icon: mdi:identifier
+      - type: attribute
+        entity: sensor.sondehub_nearest_sonde_distance
+        attribute: altitude_m
+        name: Altitude
+        suffix: m
+        icon: mdi:arrow-expand-vertical
+      - entity: sensor.sondehub_nearest_predicted_landing_distance
+        name: Nearest predicted landing
+      - entity: sensor.sondehub_sondes_in_flight_radius
+        name: Sondes in flight radius
+      - type: section
+        label: Polling
+      - entity: button.sondehub_check_now
+        name: Check now
+      - entity: sensor.sondehub_last_check
+        name: Last check
+        format: relative
+      - entity: number.sondehub_update_interval
+        name: Update interval
+      - entity: number.sondehub_landing_prediction_interval
+        name: Landing prediction interval
+  - type: map
+    title: Nearest sonde
+    default_zoom: 6
+    entities:
+      - entity: zone.home
+      - entity: sensor.sondehub_nearest_sonde_distance
+        name: Sonde
