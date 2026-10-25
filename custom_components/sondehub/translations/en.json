@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SondeHub radiosondes",
+        "description": "Pick the location to watch (defaults to your Home Assistant location).",
+        "data": {
+          "name": "Name",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "flight_radius_km": "Flight alert radius",
+          "landing_radius_km": "Landing alert radius",
+          "watch_radius_km": "Watch radius (fetch predictions)",
+          "scan_interval": "Update interval"
+        }
+      }
+    },
+    "error": { "cannot_connect": "Cannot reach the SondeHub API." },
+    "abort": { "already_configured": "This location is already configured." }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "flight_radius_km": "Flight alert radius",
+          "landing_radius_km": "Landing alert radius",
+          "watch_radius_km": "Watch radius (fetch predictions)",
+          "scan_interval": "Update interval"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "nearest_sonde_distance": { "name": "Nearest sonde distance" },
+      "nearest_landing_distance": { "name": "Nearest predicted landing distance" },
+      "sondes_in_range": { "name": "Sondes in flight radius" }
+    },
+    "binary_sensor": {
+      "sonde_nearby": { "name": "Sonde nearby" },
+      "landing_nearby": { "name": "Landing nearby" }
+    }
+  }
+}

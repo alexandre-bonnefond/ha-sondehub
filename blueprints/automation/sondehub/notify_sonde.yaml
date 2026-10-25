@@ -1,0 +1,70 @@
+blueprint:
+  name: SondeHub - notification radiosonde
+  description: >
+    Envoie une notification sur ton téléphone quand une radiosonde passe dans
+    le rayon de vol, ou quand un atterrissage est prévu près de chez toi.
+  domain: automation
+  input:
+    notify_device:
+      name: Téléphone (app Home Assistant)
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+    notify_flight:
+      name: Alerter quand une sonde survole mon rayon
+      default: true
+      selector:
+        boolean:
+    notify_landing:
+      name: Alerter quand un atterrissage est prévu près de moi
+      default: true
+      selector:
+        boolean:
+
+mode: queued
+max: 10
+
+variables:
+  notify_flight: !input notify_flight
+  notify_landing: !input notify_landing
+
+triggers:
+  - trigger: event
+    event_type: sondehub_sonde_nearby
+    id: flight
+  - trigger: event
+    event_type: sondehub_landing_nearby
+    id: landing
+
+conditions:
+  - condition: template
+    value_template: >
+      {{ (trigger.id == 'flight' and notify_flight)
+         or (trigger.id == 'landing' and notify_landing) }}
+
+actions:
+  - variables:
+      d: "{{ trigger.event.data }}"
+      title: >
+        {% if trigger.id == 'landing' %}
+          {{ 'Sonde posée' if d.landed else 'Atterrissage prévu' }} : {{ d.serial }}
+        {% else %}
+          Sonde à proximité : {{ d.serial }}
+        {% endif %}
+      message: >
+        {% if trigger.id == 'landing' %}
+          {{ d.type or 'Sonde' }} {{ d.serial }} — {{ d.landing_distance_km }} km,
+          cap {{ d.landing_bearing }}°{% if d.frequency %}, {{ d.frequency }} MHz{% endif %}.
+          {% if d.landing_time and not d.landed %}Heure estimée : {{ d.landing_time }}.{% endif %}
+          {{ d.maps_url }}
+        {% else %}
+          {{ d.type or 'Sonde' }} {{ d.serial }} à {{ d.distance_km }} km (cap {{ d.bearing }}°),
+          alt. {{ (d.altitude or 0) | round(0) }} m{% if d.frequency %}, {{ d.frequency }} MHz{% endif %}.
+          {{ d.sondehub_url }}
+        {% endif %}
+  - device_id: !input notify_device
+    domain: mobile_app
+    type: notify
+    title: "{{ title | trim }}"
+    message: "{{ message | trim }}"

@@ -1,0 +1,12 @@
+{
+  "domain": "sondehub",
+  "name": "SondeHub Radiosondes",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/YOUR_USER/ha-sondehub",
+  "issue_tracker": "https://github.com/YOUR_USER/ha-sondehub/issues",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "0.1.0"
+}
